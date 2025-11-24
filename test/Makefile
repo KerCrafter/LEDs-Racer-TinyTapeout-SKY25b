@@ -1,0 +1,68 @@
+# Makefile
+# See https://docs.cocotb.org/en/stable/quickstart.html for more info
+
+# defaults
+SIM ?= icarus
+WAVES ?= 1
+TOPLEVEL_LANG ?= verilog
+SRC_DIR = $(PWD)/../src
+PROJECT_SOURCES += tt_um_kercrafter_leds_racer.v
+PROJECT_SOURCES += LEDs-Racer/src/LEDs_racer_main.v
+PROJECT_SOURCES += LEDs-Racer/src/LEDs_racer_core.v
+PROJECT_SOURCES += LEDs-Racer/src/activity_detector.v
+PROJECT_SOURCES += LEDs-Racer/src/display_unit.v
+PROJECT_SOURCES += LEDs-Racer/src/domain_unit.v
+PROJECT_SOURCES += LEDs-Racer/src/end_game_logics.v
+PROJECT_SOURCES += LEDs-Racer/src/menu_manager.v
+PROJECT_SOURCES += LEDs-Racer/src/player_button.v
+PROJECT_SOURCES += LEDs-Racer/src/screen_manager.v
+PROJECT_SOURCES += LEDs-Racer/src/button-debouncer/button_debouncer.v
+PROJECT_SOURCES += LEDs-Racer/src/WS2812B-driver/WS2812B_driver.v
+PROJECT_SOURCES += LEDs-Racer/src/WS2812B-driver/NRZ_sequence.v
+PROJECT_SOURCES += LEDs-Racer/src/WS2812B-driver/pipe_tri_bus.v
+PROJECT_SOURCES += LEDs-Racer/src/pipe-pulse-generator/pipe_pulse_generator.v
+PROJECT_SOURCES += LEDs-Racer/src/timer/timer.v
+PROJECT_SOURCES += LEDs-Racer/src/menu_manager/ready_trigger_countdown.v
+PROJECT_SOURCES += LEDs-Racer/src/screen_manager/router.v
+PROJECT_SOURCES += LEDs-Racer/src/screen_manager/screens/end_screen.v
+PROJECT_SOURCES += LEDs-Racer/src/screen_manager/screens/gameplay_screen.v
+PROJECT_SOURCES += LEDs-Racer/src/screen_manager/screens/menu_screen.v
+PROJECT_SOURCES += LEDs-Racer/src/screen_manager/screens.v
+PROJECT_SOURCES += LEDs-Racer/src/screen_manager/is_game_finished.v
+PROJECT_SOURCES += LEDs-Racer/src/screen_manager/is_game_started.v
+
+ifneq ($(GATES),yes)
+
+# RTL simulation:
+SIM_BUILD				= sim_build/rtl
+VERILOG_SOURCES += $(addprefix $(SRC_DIR)/,$(PROJECT_SOURCES))
+
+else
+
+# Gate level simulation:
+SIM_BUILD				= sim_build/gl
+COMPILE_ARGS    += -DGL_TEST
+COMPILE_ARGS    += -DFUNCTIONAL
+COMPILE_ARGS    += -DUSE_POWER_PINS
+COMPILE_ARGS    += -DSIM
+COMPILE_ARGS    += -DUNIT_DELAY=\#1
+VERILOG_SOURCES += $(PDK_ROOT)/sky130A/libs.ref/sky130_fd_sc_hd/verilog/primitives.v
+VERILOG_SOURCES += $(PDK_ROOT)/sky130A/libs.ref/sky130_fd_sc_hd/verilog/sky130_fd_sc_hd.v
+
+# this gets copied in by the GDS action workflow
+VERILOG_SOURCES += $(PWD)/gate_level_netlist.v
+
+endif
+
+# Allow sharing configuration between design and testbench via `include`:
+COMPILE_ARGS 		+= -I$(SRC_DIR)
+
+# Include the testbench sources:
+VERILOG_SOURCES += $(PWD)/tb.v
+TOPLEVEL = tb
+
+# List test modules to run, separated by commas and without the .py suffix:
+COCOTB_TEST_MODULES = test
+
+# include cocotb's make rules to take care of the simulator setup
+include $(shell cocotb-config --makefiles)/Makefile.sim

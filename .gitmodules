@@ -1,0 +1,3 @@
+[submodule "src/LEDs-Racer"]
+	path = src/LEDs-Racer
+	url = https://github.com/KerCrafter/FPGA-LEDs-Racer.git
